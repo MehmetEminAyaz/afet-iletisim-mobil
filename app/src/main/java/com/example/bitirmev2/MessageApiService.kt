@@ -1,0 +1,16 @@
+package com.example.bitirmev2
+
+import com.example.bitirmev2.model.HelpMessage
+import retrofit2.Response
+import retrofit2.http.Body
+import retrofit2.http.Header
+import retrofit2.http.POST
+
+interface MessageApiService {
+
+    @POST("api/messages")
+    suspend fun sendMessage(
+        @Body message: HelpMessage,
+        @Header("Authorization") token: String
+    ): Response<Void>
+}
