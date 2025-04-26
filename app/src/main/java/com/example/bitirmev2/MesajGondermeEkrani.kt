@@ -9,13 +9,14 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.bitirmev2.viewmodel.MessageSenderViewModel
 import kotlinx.coroutines.launch
-
+import androidx.compose.ui.platform.LocalContext
 @Composable
 fun MesajGondermeEkrani(navController: NavController, token: String) {
     val viewModel = remember { MessageSenderViewModel() }
     val sendState by viewModel.sendState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -28,9 +29,8 @@ fun MesajGondermeEkrani(navController: NavController, token: String) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = {
-            viewModel.sendAllMessages(token)
-        }) {
+        Button(onClick = { viewModel.sendAllMessages(context) })
+        {
             Text("Mesajları Gönder")
         }
 

@@ -15,15 +15,8 @@ import com.example.bitirmev2.data.LocalUserRepository
 import com.example.bitirmev2.model.HelpMessage
 import com.example.bitirmev2.model.MessageType
 import com.example.bitirmev2.nearby.NearbyManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import java.util.*
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import kotlinx.coroutines.withContext
 
 @Composable
 fun MalzemeYardimFormEkrani(navController: NavHostController) {
@@ -37,7 +30,6 @@ fun MalzemeYardimFormEkrani(navController: NavHostController) {
 
     var extraNote by remember { mutableStateOf("") }
 
-    // Yardım türleri ve miktarları
     var food by remember { mutableStateOf("") }
     var water by remember { mutableStateOf("") }
     var shelter by remember { mutableStateOf("") }
@@ -54,10 +46,7 @@ fun MalzemeYardimFormEkrani(navController: NavHostController) {
         val snackbarHostState = remember { SnackbarHostState() }
         val coroutineScope = rememberCoroutineScope()
 
-        Scaffold(
-            snackbarHost = { SnackbarHost(snackbarHostState) },
-            //topBar = { BackTopBar("Arama Kurtarma Talebi", navController) }
-        ) { paddingValues ->
+        Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -66,107 +55,113 @@ fun MalzemeYardimFormEkrani(navController: NavHostController) {
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-            AdresSecimiBileseni(
-                initialCity = city,
-                initialDistrict = district,
-                initialNeighborhood = neighborhood,
-                initialStreet = street,
-                initialApartment = apartmentNo
-            ) { c, d, m, s, a ->
-                city = c
-                district = d
-                neighborhood = m
-                street = s
-                apartmentNo = a
-            }
+                AdresSecimiBileseni(
+                    initialCity = city,
+                    initialDistrict = district,
+                    initialNeighborhood = neighborhood,
+                    initialStreet = street,
+                    initialApartment = apartmentNo
+                ) { c, d, m, s, a ->
+                    city = c
+                    district = d
+                    neighborhood = m
+                    street = s
+                    apartmentNo = a
+                }
 
-            Text("İhtiyaç Türleri", style = MaterialTheme.typography.titleMedium)
+                Text("İhtiyaç Türleri", style = MaterialTheme.typography.titleMedium)
 
-            OutlinedTextField(
-                value = food,
-                onValueChange = { food = it },
-                label = { Text("Yiyecek (kişilik)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+                OutlinedTextField(
+                    value = food,
+                    onValueChange = { food = it },
+                    label = { Text("Yiyecek (kişilik)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
 
-            OutlinedTextField(
-                value = water,
-                onValueChange = { water = it },
-                label = { Text("Su (kişilik)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+                OutlinedTextField(
+                    value = water,
+                    onValueChange = { water = it },
+                    label = { Text("Su (kişilik)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
 
-            OutlinedTextField(
-                value = shelter,
-                onValueChange = { shelter = it },
-                label = { Text("Barınma (kişilik)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+                OutlinedTextField(
+                    value = shelter,
+                    onValueChange = { shelter = it },
+                    label = { Text("Barınma (kişilik)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
 
-            OutlinedTextField(
-                value = heating,
-                onValueChange = { heating = it },
-                label = { Text("Isınma (kişilik)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+                OutlinedTextField(
+                    value = heating,
+                    onValueChange = { heating = it },
+                    label = { Text("Isınma (kişilik)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
 
-            OutlinedTextField(
-                value = extraNote,
-                onValueChange = { extraNote = it },
-                label = { Text("Ekstra Açıklama") },
-                modifier = Modifier.fillMaxWidth()
-            )
+                OutlinedTextField(
+                    value = extraNote,
+                    onValueChange = { extraNote = it },
+                    label = { Text("Ekstra Açıklama") },
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-            Button(
-                onClick = {
-                    val yardimListesi = buildString {
-                        if (food.isNotBlank() && food != "0") append("- Yiyecek: ${food} kişilik\n")
-                        if (water.isNotBlank() && water != "0") append("- Su: ${water} kişilik\n")
-                        if (shelter.isNotBlank() && shelter != "0") append("- Barınma: ${shelter} kişilik\n")
-                        if (heating.isNotBlank() && heating != "0") append("- Isınma: ${heating} kişilik\n")
-                    }.trim()
+                Button(
+                    onClick = {
+                        val aidList = buildString {
+                            if (food.isNotBlank() && food != "0") append("- Yiyecek: $food kişilik\n")
+                            if (water.isNotBlank() && water != "0") append("- Su: $water kişilik\n")
+                            if (shelter.isNotBlank() && shelter != "0") append("- Barınma: $shelter kişilik\n")
+                            if (heating.isNotBlank() && heating != "0") append("- Isınma: $heating kişilik\n")
+                        }.trim()
 
-                    val message = HelpMessage(
-                        id = UUID.randomUUID().toString(),
-                        type = MessageType.SUPPLY,
-                        name = "", // isim gerekmez
-                        address = "$city / $district / $neighborhood / $street / No: $apartmentNo",
-                        personCount = 0,
-                        extraNote = "Yardım Türleri:\n$yardimListesi\nEkstra Not: $extraNote",
-                        senderName = senderFullName
-                    )
+                        val message = HelpMessage(
+                            id = UUID.randomUUID().toString(),
+                            type = MessageType.SUPPLY,
+                            name = "${profile?.name.orEmpty()} ${profile?.surname.orEmpty()}",
+                            address = "$city / $district / $neighborhood / $street / No: $apartmentNo",
+                            personCount = 0,
+                            extraNote = "Yardım Türleri:\n$aidList\n$extraNote",
+                            senderName = senderFullName,
+                            city = city,
+                            district = district,
+                            neighborhood = neighborhood,
+                            street = street,
+                            buildingNumber = apartmentNo
+                        )
 
-                    CoroutineScope(Dispatchers.IO).launch {
-                        LocalMessageRepository.insert(message)
-                        NearbyManager.sendMessageToPeers(message)
-                        withContext(Dispatchers.Main) {
-                            snackbarHostState.showSnackbar("Mesaj gönderildi")
+                        CoroutineScope(Dispatchers.IO).launch {
+                            LocalMessageRepository.insert(message)
+                            NearbyManager.sendMessageToPeers(message)
+                            withContext(Dispatchers.Main) {
+                                snackbarHostState.showSnackbar("Mesaj gönderildi")
+                            }
                         }
-                    }
 
-                    gonderilenMesaj = """
-                        [GÖNDERİLDİ]
-                        Tür: ${message.type}
-                        ID: ${message.id}
-                        Gönderen: ${message.senderName}
-                        Adres: ${message.address}
-                        $yardimListesi
-                        Ekstra Not: $extraNote
-                    """.trimIndent()
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Gönder")
-            }
+                        gonderilenMesaj = """
+                            [GÖNDERİLDİ]
+                            Tür: ${message.type}
+                            ID: ${message.id}
+                            Gönderen: ${message.senderName}
+                            Adres: ${message.address}
+                            $aidList
+                            Ekstra Not: $extraNote
+                        """.trimIndent()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Gönder")
+                }
 
-            gonderilenMesaj?.let {
-                Divider()
-                Text(it)
+                gonderilenMesaj?.let {
+                    Divider()
+                    Text(it)
+                }
             }
         }
     }
-}}
+}

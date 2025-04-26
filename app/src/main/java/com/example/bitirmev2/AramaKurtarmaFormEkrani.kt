@@ -123,7 +123,12 @@ fun AramaKurtarmaFormEkrani(navController: NavHostController) {
                         address = "$city / $district / $neighborhood / $street / No: $apartmentNo",
                         personCount = selectedKisiSayisi.toInt(),
                         extraNote = extraNote,
-                        senderName = senderFullName
+                        senderName = senderFullName,
+                        city = city,
+                        district = district,
+                        neighborhood = neighborhood,
+                        street = street,
+                        buildingNumber = apartmentNo
                     )
 
                     CoroutineScope(Dispatchers.IO).launch {

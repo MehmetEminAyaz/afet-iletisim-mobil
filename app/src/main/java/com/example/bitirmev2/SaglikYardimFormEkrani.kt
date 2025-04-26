@@ -16,15 +16,8 @@ import com.example.bitirmev2.data.LocalUserRepository
 import com.example.bitirmev2.model.HelpMessage
 import com.example.bitirmev2.model.MessageType
 import com.example.bitirmev2.nearby.NearbyManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import java.util.*
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import kotlinx.coroutines.withContext
 
 @Composable
 fun SaglikYardimFormEkrani(navController: NavHostController) {
@@ -63,7 +56,6 @@ fun SaglikYardimFormEkrani(navController: NavHostController) {
 
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
-           // topBar = { BackTopBar("Arama Kurtarma Talebi", navController) }
         ) { paddingValues ->
             Column(
                 modifier = Modifier
@@ -73,101 +65,109 @@ fun SaglikYardimFormEkrani(navController: NavHostController) {
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-            AdresSecimiBileseni(
-                initialCity = city,
-                initialDistrict = district,
-                initialNeighborhood = neighborhood,
-                initialStreet = street,
-                initialApartment = apartmentNo
-            ) { c, d, m, s, a ->
-                city = c
-                district = d
-                neighborhood = m
-                street = s
-                apartmentNo = a
-            }
-
-            // Tıbbi durum dropdown
-            ExposedDropdownField(
-                label = "Tıbbi Durum Seçin",
-                options = tibbiDurumlar,
-                selectedOption = selectedDurum,
-                onOptionSelected = { selectedDurum = it }
-            )
-
-            // Kişi sayısı dropdown
-            val kisiSayilari = (1..5).map { it.toString() }
-            ExposedDropdownField(
-                label = "Kişi Sayısı",
-                options = kisiSayilari,
-                selectedOption = selectedKisiSayisi,
-                onOptionSelected = {
-                    selectedKisiSayisi = it
-                    nameInputs = List(it.toInt()) { "" }
+                AdresSecimiBileseni(
+                    initialCity = city,
+                    initialDistrict = district,
+                    initialNeighborhood = neighborhood,
+                    initialStreet = street,
+                    initialApartment = apartmentNo
+                ) { c, d, m, s, a ->
+                    city = c
+                    district = d
+                    neighborhood = m
+                    street = s
+                    apartmentNo = a
                 }
-            )
 
-            // Ad soyad girişleri
-            nameInputs.forEachIndexed { index, _ ->
+                // Tıbbi durum seçimi
+                ExposedDropdownField(
+                    label = "Tıbbi Durum Seçin",
+                    options = tibbiDurumlar,
+                    selectedOption = selectedDurum,
+                    onOptionSelected = { selectedDurum = it }
+                )
+
+                // Kişi sayısı seçimi
+                val kisiSayilari = (1..5).map { it.toString() }
+                ExposedDropdownField(
+                    label = "Kişi Sayısı",
+                    options = kisiSayilari,
+                    selectedOption = selectedKisiSayisi,
+                    onOptionSelected = {
+                        selectedKisiSayisi = it
+                        nameInputs = List(it.toInt()) { "" }
+                    }
+                )
+
+                // Kişi ad soyad girişleri
+                nameInputs.forEachIndexed { index, _ ->
+                    OutlinedTextField(
+                        value = nameInputs[index],
+                        onValueChange = {
+                            nameInputs = nameInputs.toMutableList().apply { set(index, it) }
+                        },
+                        label = { Text("Kişi ${index + 1} Ad Soyad") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                // Ekstra açıklama
                 OutlinedTextField(
-                    value = nameInputs[index],
-                    onValueChange = {
-                        nameInputs = nameInputs.toMutableList().apply { set(index, it) }
-                    },
-                    label = { Text("Kişi ${index + 1} Ad Soyad") },
+                    value = extraNote,
+                    onValueChange = { extraNote = it },
+                    label = { Text("Ekstra Açıklama") },
                     modifier = Modifier.fillMaxWidth()
                 )
-            }
 
-            OutlinedTextField(
-                value = extraNote,
-                onValueChange = { extraNote = it },
-                label = { Text("Ekstra Açıklama") },
-                modifier = Modifier.fillMaxWidth()
-            )
+                // Gönder Butonu
+                Button(
+                    onClick = {
+                        val message = HelpMessage(
+                            id = UUID.randomUUID().toString(),
+                            type = MessageType.HEALTH,
+                            name = nameInputs.joinToString(", "),
+                            address = "$city / $district / $neighborhood / $street / No: $apartmentNo",
+                            personCount = selectedKisiSayisi.toInt(),
+                            extraNote = "Durum: $selectedDurum\nNot: $extraNote",
+                            senderName = senderFullName,
+                            city = city,
+                            district = district,
+                            neighborhood = neighborhood,
+                            street = street,
+                            buildingNumber = apartmentNo,
+                            healthType = selectedDurum
+                        )
 
-            // Gönder
-            Button(
-                onClick = {
-                    val message = HelpMessage(
-                        id = UUID.randomUUID().toString(),
-                        type = MessageType.HEALTH,
-                        name = nameInputs.joinToString(", "),
-                        address = "$city / $district / $neighborhood / $street / No: $apartmentNo",
-                        personCount = selectedKisiSayisi.toInt(),
-                        extraNote = "Durum: $selectedDurum\nNot: $extraNote",
-                        senderName = senderFullName
-                    )
-
-                    CoroutineScope(Dispatchers.IO).launch {
-                        LocalMessageRepository.insert(message)
-                        NearbyManager.sendMessageToPeers(message)
-                        withContext(Dispatchers.Main) {
-                            snackbarHostState.showSnackbar("Mesaj gönderildi")
+                        CoroutineScope(Dispatchers.IO).launch {
+                            LocalMessageRepository.insert(message)
+                            NearbyManager.sendMessageToPeers(message)
+                            withContext(Dispatchers.Main) {
+                                snackbarHostState.showSnackbar("Mesaj gönderildi")
+                            }
                         }
-                    }
 
-                    gonderilenMesaj = """
-                        [GÖNDERİLDİ]
-                        Tür: ${message.type}
-                        ID: ${message.id}
-                        Gönderen: ${message.senderName}
-                        Adres: ${message.address}
-                        Kişi Sayısı: ${message.personCount}
-                        Kişiler: ${message.name}
-                        Tıbbi Durum: $selectedDurum
-                        Açıklama: $extraNote
-                    """.trimIndent()
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Gönder")
-            }
+                        gonderilenMesaj = """
+                            [GÖNDERİLDİ]
+                            Tür: ${message.type}
+                            ID: ${message.id}
+                            Gönderen: ${message.senderName}
+                            Adres: ${message.address}
+                            Kişi Sayısı: ${message.personCount}
+                            Kişiler: ${message.name}
+                            Tıbbi Durum: $selectedDurum
+                            Açıklama: $extraNote
+                        """.trimIndent()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Gönder")
+                }
 
-            gonderilenMesaj?.let {
-                Divider()
-                Text(it)
+                gonderilenMesaj?.let {
+                    Divider()
+                    Text(it)
+                }
             }
         }
     }
-}}
+}
